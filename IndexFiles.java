@@ -1,4 +1,8 @@
-package lucene;
+package Lucene;
+
+// I am using the code from the followign website. 
+// https://lucene.apache.org/core/7_3_0/demo/src-html/org/apache/lucene/demo/IndexFiles.html#line.52
+// I made a few modifications
 
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -15,21 +19,9 @@ package lucene;
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */
+*/
+//package org.apache.lucene.demo;
 
-import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.standard.StandardAnalyzer;
-import org.apache.lucene.document.Document;
-import org.apache.lucene.document.Field;
-import org.apache.lucene.document.LongField;
-import org.apache.lucene.document.StringField;
-import org.apache.lucene.document.TextField;
-import org.apache.lucene.index.IndexWriter;
-import org.apache.lucene.index.IndexWriterConfig.OpenMode;
-import org.apache.lucene.index.IndexWriterConfig;
-import org.apache.lucene.index.Term;
-import org.apache.lucene.store.Directory;
-import org.apache.lucene.store.FSDirectory;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -44,24 +36,66 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Date;
 
+import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.document.LongPoint;
+import org.apache.lucene.document.Document;
+import org.apache.lucene.document.Field;
+import org.apache.lucene.document.StringField;
+import org.apache.lucene.document.TextField;
+import org.apache.lucene.index.IndexWriter;
+import org.apache.lucene.index.IndexWriterConfig.OpenMode;
+import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.index.Term;
+import org.apache.lucene.store.Directory;
+import org.apache.lucene.store.FSDirectory;
+
 /** Index all text files under a directory.
  * <p>
  * This is a command-line application demonstrating simple Lucene indexing.
  * Run it with no command-line arguments for usage information.
- */
+*/
 public class IndexFiles {
   
   private IndexFiles() {}
 
   /** Index all text files under a directory. */
- public static void main(String[] args) {
-	 
-    // String indexPath = "C:\\seminar\\index";
-    String indexPath = "C:\\Users\\maint\\Desktop\\Lucene-Tutorials-master\\index";
-    // String docsPath = "C:\\seminar\\test data";
-    String docsPath = "C:\\Users\\maint\\Desktop\\Lucene-Tutorials-master\\test data";
+  
+  //This code below is from Apache. I commented it out and replaced it with my code below.
+  /* public static void main(String[] args) {
+    String usage = "java org.apache.lucene.demo.IndexFiles"
+                 + " [-index INDEX_PATH] [-docs DOCS_PATH] [-update]\n\n"
+                 + "This indexes the documents in DOCS_PATH, creating a Lucene index"
+                 + "in INDEX_PATH that can be searched with SearchFiles";
+    String indexPath = "index";
+    String docsPath = null;
     boolean create = true;
+    for(int i=0;i<args.length;i++) {
+      if ("-index".equals(args[i])) {
+        indexPath = args[i+1];
+        i++;
+      } else if ("-docs".equals(args[i])) {
+        docsPath = args[i+1];
+        i++;
+      } else if ("-update".equals(args[i])) {
+        create = false;
+     }
+   }
 
+    if (docsPath == null) {
+      System.err.println("Usage: " + usage);
+      System.exit(1);
+    }
+    
+   */
+  
+  // I commented the text above and added this one instead. This is where the JSON file is located.
+  public static void main(String[] args) {
+		 
+	String indexPath = "C:\\Users\\maint\\Desktop\\Lucene-Tutorials-master\\index";
+	String docsPath = "C:\\Users\\maint\\Desktop\\Lucene-Tutorials-master\\test data";
+	boolean create = true;
+	
     final Path docDir = Paths.get(docsPath);
     if (!Files.isReadable(docDir)) {
       System.out.println("Document directory '" +docDir.toAbsolutePath()+ "' does not exist or is not readable, please check the path");
@@ -80,14 +114,14 @@ public class IndexFiles {
         // Create a new index in the directory, removing any
         // previously indexed documents:
         iwc.setOpenMode(OpenMode.CREATE);
-     } else {
+      } else {
         // Add new documents to an existing index:
         iwc.setOpenMode(OpenMode.CREATE_OR_APPEND);
       }
 
       // Optional: for better indexing performance, if you
       // are indexing many documents, increase the RAM
-     // buffer.  But if you do this, increase the max heap
+      // buffer.  But if you do this, increase the max heap
       // size to the JVM (eg add -Xmx512m or -Xmx1g):
       //
       // iwc.setRAMBufferSizeMB(256.0);
@@ -153,7 +187,7 @@ public class IndexFiles {
       // make a new, empty document
       Document doc = new Document();
       
-     // Add the path of the file as a field named "path".  Use a
+      // Add the path of the file as a field named "path".  Use a
       // field that is indexed (i.e. searchable), but don't tokenize 
       // the field into separate words and don't index term frequency
       // or positional information:
@@ -161,13 +195,13 @@ public class IndexFiles {
       doc.add(pathField);
       
       // Add the last modified date of the file a field named "modified".
-      // Use a LongField that is indexed (i.e. efficiently filterable with
-      // NumericRangeFilter).  This indexes to milli-second resolution, which
+      // Use a LongPoint that is indexed (i.e. efficiently filterable with
+      // PointRangeQuery).  This indexes to milli-second resolution, which
       // is often too fine.  You could instead create a number based on
       // year/month/day/hour/minutes/seconds, down the resolution you require.
       // For example the long value 2011021714 would mean
       // February 17, 2011, 2-3 PM.
-      doc.add(new LongField("modified", lastModified, Field.Store.NO));
+      doc.add(new LongPoint("modified", lastModified));
       
       // Add the contents of the file to a field named "contents".  Specify a Reader,
       // so that the text of the file is tokenized and indexed, but not stored.
@@ -187,5 +221,5 @@ public class IndexFiles {
         writer.updateDocument(new Term("path", file.toString()), doc);
       }
     }
+   }
   }
-}
